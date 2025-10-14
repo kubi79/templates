@@ -1,5 +1,5 @@
 - name: hello world
-  host: all
+  hosts: all
   tasks:
     - name: hello message
       debug:
