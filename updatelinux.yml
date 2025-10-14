@@ -1,0 +1,7 @@
+---
+- name: update linux
+  hosts: all
+  tasks:
+    - name: blee
+      debug:
+        msg: "Hello world!"
