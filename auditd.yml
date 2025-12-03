@@ -21,7 +21,7 @@
 
     - name: Copy file /etc/audit/rules.d/audit.rules
       ansible.builtin.copy:
-        src: files/audit.rules
+        src: audit.rules
         dest: /etc/audit/rules.d/audit.rules
         owner: root
         group: root
