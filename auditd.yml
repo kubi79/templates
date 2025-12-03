@@ -1,0 +1,107 @@
+---
+- name: Auditd security settings deployment for RedHat 8/9 family
+  hosts: orpheus
+  become: yes
+  gather_facts: true
+  tasks:
+    - name: Check installed os
+      ansible.builtin.fail:
+        msg: "Stopped! This playbook is only for RedHat/Rocky in version 8 or 9. Dicovered {{ ansible_distribution }} {{ ansible_distribution_major_version }}."
+      when:
+        - ansible_distribution not in ['RedHat', 'Rocky'] or ansible_distribution_major_version not in ['8', '9']
+
+    - name: Check if packages are installed
+      ansible.builtin.package:
+        name:
+          - audit
+          - rsyslog
+          - audispd-plugins
+        state: present
+      register: installed_packages
+
+    - name: Copy file /etc/audit/rules.d/audit.rules
+      ansible.builtin.copy:
+        src: files/audit.rules
+        dest: /etc/audit/rules.d/audit.rules
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Command  /usr/sbin/augenrules --check
+      ansible.builtin.command: /usr/sbin/augenrules --check
+      register: augenrules_check_output
+      changed_when: false
+
+    - name: Run reload if needed /usr/sbin/augenrules --load
+      ansible.builtin.command: /usr/sbin/augenrules --load
+      become: true
+      register: augenrules_load_output
+      when: augenrules_check_output.stdout is search('Rules have changed')
+
+    - name: Checking /etc/audit/plugins.d/syslog.conf active
+      ansible.builtin.lineinfile:
+        path: /etc/audit/plugins.d/syslog.conf
+        regexp: '^active\s*=\s*no$'
+        line: 'active = yes'
+        state: present
+
+    - name: Checking /etc/audit/plugins.d/syslog.conf args
+      ansible.builtin.lineinfile:
+        path: /etc/audit/plugins.d/syslog.conf
+        regexp: '^args\s*='
+        line: 'args = LOG_LOCAL6'
+        state: present
+
+    - name: change SysSock.Use="off" yo "on"
+      ansible.builtin.replace:
+        path: /etc/rsyslog.conf
+        regexp: '(^\s*SysSock\.Use=)"off"(\))'
+        replace: '\1"on"\2'
+
+    - name: Add line local6.* @AP-HOREN-11.local.ergodirekt.de:514
+      ansible.builtin.lineinfile:
+        path: /etc/rsyslog.conf
+        line: 'local6.* @AP-HOREN-11.local.ergodirekt.de:514'
+        insertafter: 'local7'
+        state: present
+
+    - name: Set is_in_dmz and check set True or False
+      ansible.builtin.set_fact:
+        is_in_dmz: "{{ '172.21.21.' in (ansible_default_ipv4.address | default('')) or '172.21.17.' in (ansible_default_ipv4.address | default('')) }}"
+
+    - name: Debug DMZ
+      ansible.builtin.debug:
+        msg: "Host {{ inventory_hostname }} ({{ ansible_default_ipv4.address | default('brak IP') }}) → DMZ = {{ is_in_dmz }}"
+
+    - name: Remove line local6.* @AP-HOREN-11.local.ergodirekt.de:514 if host is in dmz
+      ansible.builtin.lineinfile:
+        path: /etc/rsyslog.conf
+        regexp: '^local6*'
+        state: absent
+      when: is_in_dmz
+
+    - name: Add line local6.* @AP-HOREN-12.local.ergodirekt.de:514 if host is in dmz
+      ansible.builtin.lineinfile:
+        path: /etc/rsyslog.conf
+        line: 'local6.* @AP-HOREN-12.local.ergodirekt.de:514'
+        insertafter: 'local7'
+        state: present
+      when: is_in_dmz
+
+    - name: Add host to  /etc/hosts only in DMZ
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "172.21.17.149 AP-HOREN-12.local.ergodirekt.de"
+        regexp: '^172\.21\.17\.149\s+AP-HOREN-12.local.ergodirekt.de'
+        state: present
+      when: is_in_dmz
+
+    - name: Restart Auditd service
+      command: /usr/sbin/service auditd restart
+      register: restart_auditd
+
+    - name: Restart rsyslog service
+      ansible.builtin.service:
+        name: rsyslog
+        state: restarted
+
