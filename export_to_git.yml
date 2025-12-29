@@ -1,6 +1,7 @@
 - name: Export AWX Templates to GitHub
   hosts: localhost
   connection: local
+  gather_facts: false
   tasks:
     - name: Export templates using awx-cli
       shell: "awx export --job_templates"
