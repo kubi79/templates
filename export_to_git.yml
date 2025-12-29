@@ -3,13 +3,14 @@
   connection: local
   gather_facts: false
   tasks:
-    - name: Export templates using awx-cli
+- name: Export templates using awx-cli
       shell: >
         awx export --job_templates --all
         --conf.host https://192.168.100.81
         --conf.username admin
         --conf.password "Ansible123!"
-        --conf.verify_ssl False
+        --conf.insecure True
+        -k
       register: awx_export
 #    - name: Export templates using awx-cli
 #      shell: "awx export --job_templates"
