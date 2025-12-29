@@ -6,7 +6,7 @@
 
   tasks:
         - name: Upgrade packages with DNF
-          become: yes
+          become: no
           ansible.builtin.dnf:
             name: '*'
             state: latest
