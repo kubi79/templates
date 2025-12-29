@@ -6,7 +6,7 @@
     - name: Export templates using awx-cli
       shell: "awx export --job_templates"
       environment:
-        CONTROLLER_HOST: "https://localhost" # lub Twój adres IP
+        CONTROLLER_HOST: "https://awx.local.com" # lub Twój adres IP
         CONTROLLER_USERNAME: "admin"
         CONTROLLER_PASSWORD: "Ansible123!"
         CONTROLLER_VERIFY_SSL: "false"
