@@ -1,0 +1,23 @@
+- name: Export AWX Templates to GitHub
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Export templates using awx-cli
+      shell: "awx export --job_templates"
+      environment:
+        CONTROLLER_HOST: "https://localhost" # lub Twój adres IP
+        CONTROLLER_USERNAME: "admin"
+        CONTROLLER_PASSWORD: "Ansible123!"
+        CONTROLLER_VERIFY_SSL: "false"
+      register: awx_export
+
+    - name: Save export to file
+      copy:
+        content: "{{ awx_export.stdout | from_json | to_nice_json }}"
+        dest: "./templates.json"
+
+    - name: Push to GitHub
+      shell: |
+        git add templates.json
+        git commit -m "Automated backup of AWX templates"
+        git push origin main
