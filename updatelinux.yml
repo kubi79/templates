@@ -2,7 +2,7 @@
 - name: Linux OS Upgrade
   hosts: all
   gather_facts: yes
-  become: yes
+  become: no
 
   tasks:
     - name: Upgrade Debian and Ubuntu systems with apt
