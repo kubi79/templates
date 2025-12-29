@@ -1,0 +1,30 @@
+- name: Export AWX Templates to GitHub
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    awx_url: "https://192.168.100.81"
+    awx_user: "admin"
+    awx_pass: "Ansible123!"
+
+  tasks:
+    - name: Pobierz szablony przez API (metoda bezpośrednia)
+      uri:
+        url: "{{ awx_url }}/api/v2/job_templates/"
+        method: GET
+        user: "{{ awx_user }}"
+        password: "{{ awx_pass }}"
+        force_basic_auth: yes
+        validate_certs: no
+        return_content: yes
+      register: awx_api_response
+
+    - name: Zapisz wynik do pliku
+      copy:
+        content: "{{ awx_api_response.json | to_nice_json }}"
+        dest: "/tmp/templates_export.json"
+
+    - name: Sprawdz czy plik nie jest pusty
+      debug:
+        msg: "Pobrano {{ awx_api_response.json.count }} szablonów."
