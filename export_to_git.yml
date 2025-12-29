@@ -4,21 +4,29 @@
   gather_facts: false
   tasks:
     - name: Export templates using awx-cli
-      shell: "awx export --job_templates"
-      environment:
-        CONTROLLER_HOST: "https://192.168.100.81"
-        CONTROLLER_USERNAME: "admin"
-        CONTROLLER_PASSWORD: "Ansible123!"
-        CONTROLLER_VERIFY_SSL: "false"
+      shell: >
+        awx export --job_templates --all
+        --conf.host https://192.168.100.81
+        --conf.username admin
+        --conf.password "Ansible123!"
+        --conf.verify_ssl False
       register: awx_export
+#    - name: Export templates using awx-cli
+#      shell: "awx export --job_templates"
+#      environment:
+#        CONTROLLER_HOST: "https://192.168.100.81"
+#        CONTROLLER_USERNAME: "admin"
+#        CONTROLLER_PASSWORD: "Ansible123!"
+#        CONTROLLER_VERIFY_SSL: "false"
+#      register: awx_export
 
-    - name: Save export to file
-      copy:
-        content: "{{ awx_export.stdout | from_json | to_nice_json }}"
-        dest: "./templates.json"
+#    - name: Save export to file
+#      copy:
+#        content: "{{ awx_export.stdout | from_json | to_nice_json }}"
+#        dest: "./templates.json"
 
-    - name: Push to GitHub
-      shell: |
-        git add templates.json
-        git commit -m "Automated backup of AWX templates"
-        git push origin main
+#    - name: Push to GitHub
+#      shell: |
+#        git add templates.json
+#        git commit -m "Automated backup of AWX templates"
+#        git push origin main
